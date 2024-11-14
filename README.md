@@ -1,180 +1,78 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Chatbot</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f7f6;
-        }
+import socket
+import threading
+import time
+import random
 
-        #chat-container {
-            width: 100%;
-            max-width: 600px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 80vh;
-        }
+# Server class to handle incoming client connections
+class NetworkServer:
+    def __init__(self, host='localhost', port=8080):
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.bind((host, port))
+        self.server.listen()
+        print(f"Server started on {host}:{port}")
+    
+    def handle_client(self, client_socket, client_address):
+        print(f"New connection from {client_address}")
+        while True:
+            try:
+                message = client_socket.recv(1024).decode()
+                if not message:
+                    break
+                print(f"Received from {client_address}: {message}")
+                response = f"Echo: {message}"
+                client_socket.send(response.encode())
+            except ConnectionResetError:
+                break
+        print(f"Connection with {client_address} closed")
+        client_socket.close()
+    
+    def start(self):
+        print("Server is running and waiting for connections...")
+        while True:
+            client_socket, client_address = self.server.accept()
+            client_handler = threading.Thread(
+                target=self.handle_client, args=(client_socket, client_address)
+            )
+            client_handler.start()
 
-        #chat-box {
-            height: 70%;
-            overflow-y: scroll;
-            padding: 15px;
-            border-bottom: 2px solid #eee;
-            background-color: #fafafa;
-        }
+# Client class to simulate network traffic
+class NetworkClient:
+    def __init__(self, host='localhost', port=8080):
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client.connect((host, port))
+        print("Connected to server")
+    
+    def send_data(self):
+        try:
+            for i in range(5):  # Send 5 messages as part of the traffic simulation
+                message = f"Message {i+1} - Traffic data: {random.randint(100, 999)}"
+                print(f"Sending: {message}")
+                self.client.send(message.encode())
+                response = self.client.recv(1024).decode()
+                print(f"Received from server: {response}")
+                time.sleep(random.uniform(0.5, 1.5))  # Random delay to simulate traffic intervals
+        finally:
+            print("Closing client connection")
+            self.client.close()
 
-        #chat-input-container {
-            display: flex;
-            padding: 10px;
-            background-color: #fff;
-            border-top: 2px solid #eee;
-        }
+# Main function to run the simulation
+def run_simulation():
+    # Start the server
+    server = NetworkServer()
+    server_thread = threading.Thread(target=server.start)
+    server_thread.start()
 
-        #chat-input {
-            width: 85%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            background-color: #f9f9f9;
-        }
+    # Simulate multiple clients connecting to the server
+    clients = []
+    for i in range(3):  # Adjust the number of clients as needed
+        client = NetworkClient()
+        client_thread = threading.Thread(target=client.send_data)
+        client_thread.start()
+        clients.append(client_thread)
 
-        #Go-button {
-            width: 15%;
-            padding: 10px;
-            border: none;
-            background-color: #007BFF;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
+    # Wait for all client threads to complete
+    for client_thread in clients:
+        client_thread.join()
 
-        #Go-button:hover {
-            background-color: #0056b3;
-        }
-
-        .message {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-            max-width: 80%;
-            word-wrap: break-word;
-        }
-
-        .user-message {
-            background-color: #e6f7ff;
-            margin-left: auto;
-            color: #007BFF;
-            text-align: right;
-        }
-
-        .bot-message {
-            background-color: #f1f1f1;
-            color: #333;
-            text-align: left;
-        }
-
-        .thinking {
-            font-style: italic;
-            color: gray;
-        }
-
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-    </style>
-</head>
-<body>
-    <div id="chat-container">
-        <div id="chat-box">
-            <!-- Chat messages will appear here -->
-        </div>
-        <div id="chat-input-container">
-            <input type="text" id="chat-input" placeholder="Type your message...">
-            <button id="send-button">Send</button>
-        </div>
-    </div>
-
-    <script>
-        const apiKey = "your-openai-api-key-here"; // Insert your OpenAI API key here
-        const chatBox = document.getElementById('chat-box');
-        const chatInput = document.getElementById('chat-input');
-        const sendButton = document.getElementById('send-button');
-
-        // Function to display messages in the chat box
-        function displayMessage(message, sender, className = '') {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message');
-            messageElement.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
-            messageElement.classList.add(className);
-            messageElement.innerText = message;
-            chatBox.appendChild(messageElement);
-            chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
-        }
-
-        // Function to send the user message and get the AI response
-        async function sendMessage() {
-            const userMessage = chatInput.value.trim();
-            if (userMessage === "") return;
-
-            displayMessage(userMessage, 'user');
-            chatInput.value = ""; // Clear input field
-
-            // Show thinking indicator for the bot
-            displayMessage("Thinking...", 'bot', 'thinking');
-
-            try {
-                const response = await fetch("https://api.openai.com/v1/completions", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey}`,
-                    },
-                    body: JSON.stringify({
-                        model: "text-davinci-003", // You can change this to other models like 'gpt-3.5-turbo' if needed
-                        prompt: userMessage,
-                        max_tokens: 150,
-                        temperature: 0.7,  // Controls randomness
-                    })
-                });
-
-                const data = await response.json();
-                const botMessage = data.choices[0].text.trim();
-
-                // Update the bot's message
-                const lastBotMessage = chatBox.lastChild;
-                if (lastBotMessage && lastBotMessage.innerText === "Thinking...") {
-                    lastBotMessage.innerText = botMessage;
-                } else {
-                    displayMessage(botMessage, 'bot');
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                displayMessage("Sorry, I couldn't process your request.", 'bot', 'error');
-            }
-        }
-
-        // Event listeners for send button and input field
-        sendButton.addEventListener('click', sendMessage);
-        chatInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
-        });
-    </script>
-</body>
-</html>
+if __name__ == "__main__":
+    run_simulation()
