@@ -51,7 +51,7 @@
             background-color: #f9f9f9;
         }
 
-        #send-button {
+        #Go-button {
             width: 15%;
             padding: 10px;
             border: none;
@@ -62,7 +62,7 @@
             border-radius: 5px;
         }
 
-        #send-button:hover {
+        #Go-button:hover {
             background-color: #0056b3;
         }
 
