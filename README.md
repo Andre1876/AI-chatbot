@@ -1,78 +1,56 @@
-import socket
-import threading
-import time
-import random
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Network Traffic Simulation</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #messages { border: 1px solid #ddd; padding: 10px; height: 200px; overflow-y: scroll; }
+    .sent { color: blue; }
+    .received { color: green; }
+    .status { color: gray; }
+  </style>
+</head>
+<body>
+  <h2>Network Traffic Simulation</h2>
+  <div id="messages"></div>
+  <input type="text" id="messageInput" placeholder="Enter message to send" />
+  <button onclick="sendMessage()">Send Message</button>
 
-# Server class to handle incoming client connections
-class NetworkServer:
-    def __init__(self, host='localhost', port=8080):
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind((host, port))
-        self.server.listen()
-        print(f"Server started on {host}:{port}")
-    
-    def handle_client(self, client_socket, client_address):
-        print(f"New connection from {client_address}")
-        while True:
-            try:
-                message = client_socket.recv(1024).decode()
-                if not message:
-                    break
-                print(f"Received from {client_address}: {message}")
-                response = f"Echo: {message}"
-                client_socket.send(response.encode())
-            except ConnectionResetError:
-                break
-        print(f"Connection with {client_address} closed")
-        client_socket.close()
-    
-    def start(self):
-        print("Server is running and waiting for connections...")
-        while True:
-            client_socket, client_address = self.server.accept()
-            client_handler = threading.Thread(
-                target=self.handle_client, args=(client_socket, client_address)
-            )
-            client_handler.start()
+  <script>
+    // Create a WebSocket to simulate network communication
+    let socket = new WebSocket("wss://echo.websocket.org"); // Using a public WebSocket echo server
+    const messagesDiv = document.getElementById("messages");
 
-# Client class to simulate network traffic
-class NetworkClient:
-    def __init__(self, host='localhost', port=8080):
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client.connect((host, port))
-        print("Connected to server")
-    
-    def send_data(self):
-        try:
-            for i in range(5):  # Send 5 messages as part of the traffic simulation
-                message = f"Message {i+1} - Traffic data: {random.randint(100, 999)}"
-                print(f"Sending: {message}")
-                self.client.send(message.encode())
-                response = self.client.recv(1024).decode()
-                print(f"Received from server: {response}")
-                time.sleep(random.uniform(0.5, 1.5))  # Random delay to simulate traffic intervals
-        finally:
-            print("Closing client connection")
-            self.client.close()
+    // Display connection status
+    socket.onopen = () => addMessage("Connected to server", "status");
+    socket.onclose = () => addMessage("Disconnected from server", "status");
 
-# Main function to run the simulation
-def run_simulation():
-    # Start the server
-    server = NetworkServer()
-    server_thread = threading.Thread(target=server.start)
-    server_thread.start()
+    // Function to display messages in the messages div
+    function addMessage(message, type) {
+      const msg = document.createElement("p");
+      msg.classList.add(type);
+      msg.textContent = message;
+      messagesDiv.appendChild(msg);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to latest message
+    }
 
-    # Simulate multiple clients connecting to the server
-    clients = []
-    for i in range(3):  # Adjust the number of clients as needed
-        client = NetworkClient()
-        client_thread = threading.Thread(target=client.send_data)
-        client_thread.start()
-        clients.append(client_thread)
+    // Function to send messages to the server
+    function sendMessage() {
+      const messageInput = document.getElementById("messageInput");
+      const message = messageInput.value.trim();
+      if (message) {
+        addMessage(`Sent: ${message}`, "sent");
+        socket.send(message);
+        messageInput.value = "";
+      }
+    }
 
-    # Wait for all client threads to complete
-    for client_thread in clients:
-        client_thread.join()
-
-if __name__ == "__main__":
-    run_simulation()
+    // Display messages received from the server
+    socket.onmessage = (event) => {
+      addMessage(`Received: ${event.data}`, "received");
+    };
+  </script>
+</body>
+</html>
