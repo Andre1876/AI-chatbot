@@ -1,74 +1,157 @@
 # AI-chatbot
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Chatbot</title>
     <style>
-        /* Styling for the chatbot */
-        body { font-family: Arial, sans-serif; }
-        #chat { width: 300px; height: 400px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; }
-        .message { margin: 10px 0; }
-        .user { text-align: right; color: blue; }
-        .bot { text-align: left; color: green; }
-        input[type="text"] { width: 70%; padding: 10px; }
-        button { padding: 10px; }
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        #chat-container {
+            width: 100%;
+            max-width: 600px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        #chat-box {
+            height: 400px;
+            overflow-y: scroll;
+            padding: 10px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        #chat-input-container {
+            display: flex;
+            padding: 10px;
+            background-color: #f7f7f7;
+            border-top: 2px solid #ddd;
+        }
+
+        #chat-input {
+            width: 90%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #send-button {
+            width: 10%;
+            padding: 10px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #send-button:hover {
+            background-color: #0056b3;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .user-message {
+            background-color: #e6f7ff;
+            text-align: right;
+        }
+
+        .bot-message {
+            background-color: #f1f1f1;
+        }
     </style>
 </head>
 <body>
-    <h2>AI Chatbot</h2>
-    <div id="chat"></div>
-    <input type="text" id="messageInput" placeholder="Type a message...">
-    <button onclick="sendMessage()">Send</button>
+    <div id="chat-container">
+        <div id="chat-box">
+            <!-- Chat messages will appear here -->
+        </div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Type your message...">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
 
     <script>
-        const chatBox = document.getElementById("chat");
+        const apiKey = "your-openai-api-key-here"; // Insert your OpenAI API key here
+        const chatBox = document.getElementById('chat-box');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
 
-        // Display messages in the chat window
+        // Function to display messages in the chat box
         function displayMessage(message, sender) {
-            const msgElement = document.createElement("div");
-            msgElement.classList.add("message");
-            msgElement.classList.add(sender);
-            msgElement.innerText = message;
-            chatBox.appendChild(msgElement);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+            messageElement.innerText = message;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
         }
 
-        // Send user message to OpenAI API and get the response
-        function sendMessage() {
-            const userMessage = document.getElementById("messageInput").value;
-            if (userMessage.trim() === "") return;
+        // Function to send the user message and get the AI response
+        async function sendMessage() {
+            const userMessage = chatInput.value.trim();
+            if (userMessage === "") return;
 
-            displayMessage(userMessage, "user");
-            document.getElementById("messageInput").value = "";
+            displayMessage(userMessage, 'user');
+            chatInput.value = ""; // Clear input field
 
-            // Replace this with your OpenAI API Key
-            const apiKey = "YOUR_OPENAI_API_KEY";
+            // Show typing indicator for the bot
+            displayMessage("Thinking...", 'bot');
 
-            // Send request to OpenAI API
-            fetch("https://api.openai.com/v1/completions", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: "text-davinci-003",
-                    prompt: userMessage,
-                    max_tokens: 150
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                const botResponse = data.choices[0].text.trim();
-                displayMessage(botResponse, "bot");
-            })
-            .catch(error => {
+            try {
+                const response = await fetch("https://api.openai.com/v1/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "text-davinci-003", // Or use another model if needed
+                        prompt: userMessage,
+                        max_tokens: 150,
+                    })
+                });
+
+                const data = await response.json();
+                const botMessage = data.choices[0].text.trim();
+
+                // Update the bot's message
+                const lastBotMessage = chatBox.lastChild;
+                if (lastBotMessage && lastBotMessage.innerText === "Thinking...") {
+                    lastBotMessage.innerText = botMessage;
+                } else {
+                    displayMessage(botMessage, 'bot');
+                }
+            } catch (error) {
                 console.error("Error:", error);
-                displayMessage("Sorry, I couldn't process your request.", "bot");
-            });
+                displayMessage("Sorry, I couldn't process your request.", 'bot');
+            }
         }
+
+        // Event listeners for send button and input field
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
     </script>
 </body>
 </html>
