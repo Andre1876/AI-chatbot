@@ -1,4 +1,4 @@
-# AI-chatbot
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -12,7 +12,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            background-color: #f4f7f6;
         }
 
         #chat-container {
@@ -20,34 +20,39 @@
             max-width: 600px;
             background-color: white;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
         }
 
         #chat-box {
-            height: 400px;
+            height: 70%;
             overflow-y: scroll;
-            padding: 10px;
-            border-bottom: 2px solid #ddd;
+            padding: 15px;
+            border-bottom: 2px solid #eee;
+            background-color: #fafafa;
         }
 
         #chat-input-container {
             display: flex;
             padding: 10px;
-            background-color: #f7f7f7;
-            border-top: 2px solid #ddd;
+            background-color: #fff;
+            border-top: 2px solid #eee;
         }
 
         #chat-input {
-            width: 90%;
+            width: 85%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 16px;
+            background-color: #f9f9f9;
         }
 
         #send-button {
-            width: 10%;
+            width: 15%;
             padding: 10px;
             border: none;
             background-color: #007BFF;
@@ -65,15 +70,31 @@
             margin: 10px 0;
             padding: 10px;
             border-radius: 5px;
+            max-width: 80%;
+            word-wrap: break-word;
         }
 
         .user-message {
             background-color: #e6f7ff;
+            margin-left: auto;
+            color: #007BFF;
             text-align: right;
         }
 
         .bot-message {
             background-color: #f1f1f1;
+            color: #333;
+            text-align: left;
+        }
+
+        .thinking {
+            font-style: italic;
+            color: gray;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
         }
     </style>
 </head>
@@ -95,10 +116,11 @@
         const sendButton = document.getElementById('send-button');
 
         // Function to display messages in the chat box
-        function displayMessage(message, sender) {
+        function displayMessage(message, sender, className = '') {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message');
             messageElement.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+            messageElement.classList.add(className);
             messageElement.innerText = message;
             chatBox.appendChild(messageElement);
             chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
@@ -112,8 +134,8 @@
             displayMessage(userMessage, 'user');
             chatInput.value = ""; // Clear input field
 
-            // Show typing indicator for the bot
-            displayMessage("Thinking...", 'bot');
+            // Show thinking indicator for the bot
+            displayMessage("Thinking...", 'bot', 'thinking');
 
             try {
                 const response = await fetch("https://api.openai.com/v1/completions", {
@@ -123,9 +145,10 @@
                         "Authorization": `Bearer ${apiKey}`,
                     },
                     body: JSON.stringify({
-                        model: "text-davinci-003", // Or use another model if needed
+                        model: "text-davinci-003", // You can change this to other models like 'gpt-3.5-turbo' if needed
                         prompt: userMessage,
                         max_tokens: 150,
+                        temperature: 0.7,  // Controls randomness
                     })
                 });
 
@@ -141,7 +164,7 @@
                 }
             } catch (error) {
                 console.error("Error:", error);
-                displayMessage("Sorry, I couldn't process your request.", 'bot');
+                displayMessage("Sorry, I couldn't process your request.", 'bot', 'error');
             }
         }
 
