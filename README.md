@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -16,7 +16,7 @@
         }
         .container {
             text-align: center;
-            width: 300px;
+            width: 350px;
         }
         h1 {
             color: #333;
@@ -26,7 +26,7 @@
             margin-bottom: 20px;
         }
         input[type="text"] {
-            width: 100%;
+            width: 80%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -42,6 +42,11 @@
         }
         button:hover {
             background-color: #0056b3;
+        }
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
         }
         ul {
             list-style-type: none;
@@ -64,28 +69,46 @@
         span {
             cursor: pointer;
         }
+        .priority {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Task Management Application</h1>
+        <h1></h1>
         <div class="input-container">
             <input type="text" id="taskInput" placeholder="Add a new task">
+            <select id="prioritySelect">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+            </select>
             <button onclick="addTask()">Add Task</button>
         </div>
+        
+        <div>
+            <button onclick="filterTasks('all')">All</button>
+            <button onclick="filterTasks('active')">Active</button>
+            <button onclick="filterTasks('completed')">Completed</button>
+        </div>
+        
         <ul id="taskList"></ul>
     </div>
 
     <script>
-        let tasks = [];
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let currentFilter = 'all'; // 'all', 'active', or 'completed'
 
         // Function to add a task
         function addTask() {
             const content = document.getElementById('taskInput').value;
+            const priority = document.getElementById('prioritySelect').value;
             if (!content) return;
 
-            const newTask = { content: content, completed: false };
+            const newTask = { content: content, completed: false, priority: priority };
             tasks.push(newTask);
+            saveTasks();
             renderTasks();
             document.getElementById('taskInput').value = '';
         }
@@ -93,30 +116,74 @@
         // Function to delete a task
         function deleteTask(index) {
             tasks.splice(index, 1);
+            saveTasks();
             renderTasks();
         }
 
         // Function to toggle task completion
         function toggleTask(index) {
             tasks[index].completed = !tasks[index].completed;
+            saveTasks();
             renderTasks();
         }
 
-        // Function to render tasks to the page
+        // Function to edit a task
+        function editTask(index) {
+            const newContent = prompt("Edit Task:", tasks[index].content);
+            if (newContent !== null && newContent.trim() !== "") {
+                tasks[index].content = newContent;
+                saveTasks();
+                renderTasks();
+            }
+        }
+
+        // Function to render tasks based on the current filter
         function renderTasks() {
             const taskList = document.getElementById('taskList');
             taskList.innerHTML = '';
 
-            tasks.forEach((task, index) => {
+            const filteredTasks = tasks.filter(task => {
+                if (currentFilter === 'active') return !task.completed;
+                if (currentFilter === 'completed') return task.completed;
+                return true; // 'all' filter
+            });
+
+            filteredTasks.forEach((task, index) => {
                 const li = document.createElement('li');
                 li.className = task.completed ? 'completed' : '';
                 li.innerHTML = `
                     <span onclick="toggleTask(${index})">${task.content}</span>
+                    <span class="priority" style="color: ${getPriorityColor(task.priority)}">${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}</span>
+                    <button onclick="editTask(${index})">Edit</button>
                     <button onclick="deleteTask(${index})">Delete</button>
                 `;
                 taskList.appendChild(li);
             });
         }
+
+        // Function to get the color for the task's priority
+        function getPriorityColor(priority) {
+            switch (priority) {
+                case 'high': return 'red';
+                case 'medium': return 'orange';
+                case 'low': return 'green';
+                default: return 'black';
+            }
+        }
+
+        // Function to filter tasks based on status
+        function filterTasks(status) {
+            currentFilter = status;
+            renderTasks();
+        }
+
+        // Function to save tasks to local storage
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Initial render of tasks
+        renderTasks();
     </script>
 </body>
 </html>
