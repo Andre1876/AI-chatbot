@@ -1,4 +1,5 @@
-
+<!-- Why did the web developer go broke? -->
+<!-- Because he used up all his cache! 💸 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -88,7 +89,7 @@
         }
         .filter-buttons button:hover {
             background-color: #218838;
-        }
+        } 
     </style>
 </head>
 <body>
@@ -204,3 +205,4 @@
     </script>
 </body>
 </html>
+<!-- I told my computer I needed a break, and it froze. 🤦‍♂️ -->
