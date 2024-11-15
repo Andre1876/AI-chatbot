@@ -1,12 +1,4 @@
-from flask import Flask, request, jsonify, render_template_string
-import json
-import os
 
-app = Flask(__name__)
-
-# HTML, CSS, and JavaScript as one string to serve as the template
-html_template = """
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -81,107 +73,50 @@ html_template = """
             <input type="text" id="taskInput" placeholder="Add a new task">
             <button onclick="addTask()">Add Task</button>
         </div>
-        <ul id="taskList">
-            {% for task in tasks %}
-            <li class="{{ 'completed' if task.completed else '' }}">
-                <span onclick="toggleTask({{ loop.index0 }})">{{ task.content }}</span>
-                <button onclick="deleteTask({{ loop.index0 }})">Delete</button>
-            </li>
-            {% endfor %}
-        </ul>
+        <ul id="taskList"></ul>
     </div>
 
     <script>
-        async function addTask() {
+        let tasks = [];
+
+        // Function to add a task
+        function addTask() {
             const content = document.getElementById('taskInput').value;
             if (!content) return;
-            
-            const response = await fetch('/add', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: content })
-            });
-            const tasks = await response.json();
-            renderTasks(tasks);
+
+            const newTask = { content: content, completed: false };
+            tasks.push(newTask);
+            renderTasks();
             document.getElementById('taskInput').value = '';
         }
 
-        async function deleteTask(index) {
-            const response = await fetch('/delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ index: index })
-            });
-            const tasks = await response.json();
-            renderTasks(tasks);
+        // Function to delete a task
+        function deleteTask(index) {
+            tasks.splice(index, 1);
+            renderTasks();
         }
 
-        async function toggleTask(index) {
-            const response = await fetch('/toggle', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ index: index })
-            });
-            const tasks = await response.json();
-            renderTasks(tasks);
+        // Function to toggle task completion
+        function toggleTask(index) {
+            tasks[index].completed = !tasks[index].completed;
+            renderTasks();
         }
 
-        function renderTasks(tasks) {
+        // Function to render tasks to the page
+        function renderTasks() {
             const taskList = document.getElementById('taskList');
             taskList.innerHTML = '';
+
             tasks.forEach((task, index) => {
                 const li = document.createElement('li');
                 li.className = task.completed ? 'completed' : '';
-                li.innerHTML = `<span onclick="toggleTask(${index})">${task.content}</span>
-                                <button onclick="deleteTask(${index})">Delete</button>`;
+                li.innerHTML = `
+                    <span onclick="toggleTask(${index})">${task.content}</span>
+                    <button onclick="deleteTask(${index})">Delete</button>
+                `;
                 taskList.appendChild(li);
             });
         }
     </script>
 </body>
 </html>
-"""
-
-# Load tasks from a JSON file
-def load_tasks():
-    if os.path.exists('tasks.json'):
-        with open('tasks.json', 'r') as file:
-            return json.load(file)
-    return []
-
-# Save tasks to a JSON file
-def save_tasks(tasks):
-    with open('tasks.json', 'w') as file:
-        json.dump(tasks, file)
-
-@app.route('/')
-def home():
-    tasks = load_tasks()
-    return render_template_string(html_template, tasks=tasks)
-
-@app.route('/add', methods=['POST'])
-def add_task():
-    task_content = request.json['content']
-    tasks = load_tasks()
-    tasks.append({"content": task_content, "completed": False})
-    save_tasks(tasks)
-    return jsonify(tasks)
-
-@app.route('/delete', methods=['POST'])
-def delete_task():
-    task_index = int(request.json['index'])
-    tasks = load_tasks()
-    tasks.pop(task_index)
-    save_tasks(tasks)
-    return jsonify(tasks)
-
-@app.route('/toggle', methods=['POST'])
-def toggle_task():
-    task_index = int(request.json['index'])
-    tasks = load_tasks()
-    tasks[task_index]["completed"] = not tasks[task_index]["completed"]
-    save_tasks(tasks)
-    return jsonify(tasks)
-
-if __name__ == '__main__':
-    app.run(debug=True)
