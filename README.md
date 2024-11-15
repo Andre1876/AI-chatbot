@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,19 +7,24 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #2e2e2e; /* Dark background like a computer screen */
+            color: #f5f5f5; /* Light text color */
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f5f5f5;
         }
         .container {
             text-align: center;
-            width: 350px;
+            width: 400px;
+            background-color: #1e1e1e; /* Darker background for the task manager */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
         }
         h1 {
-            color: #333;
+            color: #fff;
         }
         .input-container {
             display: flex;
@@ -27,35 +32,40 @@
         }
         input[type="text"] {
             width: 80%;
-            padding: 8px;
-            border: 1px solid #ddd;
+            padding: 10px;
+            border: 1px solid #555;
             border-radius: 4px;
+            background-color: #333;
+            color: #f5f5f5;
             margin-right: 5px;
         }
         button {
-            padding: 8px;
+            padding: 10px;
             border: none;
-            background-color: #007bff;
+            background-color: #007bff; /* Button color */
             color: white;
             border-radius: 4px;
             cursor: pointer;
         }
         button:hover {
-            background-color: #0056b3;
+            background-color: #0056b3; /* Darker shade on hover */
         }
         select {
-            padding: 8px;
+            padding: 10px;
             border-radius: 4px;
-            border: 1px solid #ddd;
+            background-color: #333;
+            border: 1px solid #555;
+            color: #f5f5f5;
         }
         ul {
             list-style-type: none;
             padding: 0;
+            margin-top: 20px;
         }
         li {
             padding: 10px;
-            background-color: #fff;
-            border: 1px solid #ddd;
+            background-color: #333;
+            border: 1px solid #555;
             border-radius: 4px;
             margin-bottom: 5px;
             display: flex;
@@ -72,6 +82,13 @@
         .priority {
             font-weight: bold;
         }
+        .filter-buttons button {
+            background-color: #28a745; /* Green button for filters */
+            margin: 5px;
+        }
+        .filter-buttons button:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
@@ -87,7 +104,7 @@
             <button onclick="addTask()">Add Task</button>
         </div>
         
-        <div>
+        <div class="filter-buttons">
             <button onclick="filterTasks('all')">All</button>
             <button onclick="filterTasks('active')">Active</button>
             <button onclick="filterTasks('completed')">Completed</button>
